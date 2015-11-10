@@ -15,7 +15,6 @@ Node{T,V}(val::T, version::V) = Node{T,V}(
     [Pair{V,T}(version, val)]
 )
 Base.show(io::IO, n::Node) = print(io, "$(n.versions)")
-Base.display(io::IO, n::Node) = Base.show(io, n)
 
 latest(n::Node) = n.versions[end][2]
 function lookup{T,V}(n::Node{T,V}, version::V)
