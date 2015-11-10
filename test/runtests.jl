@@ -23,3 +23,14 @@ commit!(default_array)
 #    println("Array v$(i) state: $(lookup(default_array, i, :))")
 # end
 @test lookup(default_array, 1, :) == [0.0, 3.5, 0.0, 0.0]
+
+show(default_array)
+
+ndim_array = PersistentArray(3,2)
+ndim_array[1,1] = 3.5
+commit!(ndim_array)
+
+tmp_array = zeros(3,2)
+tmp_array[1,1] = 3.5
+@test ndim_array[:,:] == tmp_array
+

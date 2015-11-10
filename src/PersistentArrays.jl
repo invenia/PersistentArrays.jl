@@ -11,12 +11,11 @@ type Node{T,V}
     versions::AbstractArray{Pair{V,T}}
 end
 
-Node(t::Type, v::Type) = Node{t,v}(Pair{v,t}[])
 Node{T,V}(val::T, version::V) = Node{T,V}(
     [Pair{V,T}(version, val)]
 )
-Node{T,V}(values::AbstractArray{Pair{V,T}}) = Node{T,V}(values)
 Base.show(io::IO, n::Node) = print(io, "$(n.versions)")
+Base.display(io::IO, n::Node) = Base.show(io, n)
 
 latest(n::Node) = n.versions[end][2]
 function lookup{T,V}(n::Node{T,V}, version::V)
@@ -44,9 +43,9 @@ function update!{T,V}(n::Node{T,V}, x::T, version::V)
 end
 
 
-type PersistentArray{T,V,N} <: AbstractArray{T,N}
-    data::AbstractArray{Node{T,V},N}
-    version::V
+type PersistentArray{T,N} <: AbstractArray{T,N}
+    data::AbstractArray{Node,N}
+    version
 end
 
 function PersistentArray{T,V}(dims::Int...; default_value::T=0.0, default_version::V=0)
@@ -55,20 +54,20 @@ function PersistentArray{T,V}(dims::Int...; default_value::T=0.0, default_versio
         i -> a[i] = Node(default_value, default_version),
         eachindex(a)
     )
-    PersistentArray{T,V,length(dims)}(a, increment(default_version))
+    PersistentArray{Node{T,V},length(dims)}(a, increment(default_version))
 end
 
-function Base.show{T,V}(io::IO, array::PersistentArray{T,V})
-    print(io, "PersistentArray{$(T),$(V)}(data=")
-    show(io, array.data)
-    print(io, ", version=$(array.version))")
+function Base.show(array::PersistentArray)
+    print("PersistentArray(version=$(array.version), data=")
+    show(array.data)
+    print(")")
 end
 
 version(array::PersistentArray) = array.version
 commit!(array::PersistentArray) = array.version = increment(array.version)
 increment(x::Int) = x + 1
 
-function update!{T,V}(array::PersistentArray{T,V}, x::T, version::V, idx...)
+function update!{T,V}(array::PersistentArray{Node{T,V}}, x::T, version::V, idx...)
     subarray = sub(array.data, idx...)
     for i in subarray
         update!(i, x, version)
@@ -76,14 +75,14 @@ function update!{T,V}(array::PersistentArray{T,V}, x::T, version::V, idx...)
 end
 
 
-function lookup{T,V}(array::PersistentArray{T,V}, version::V, idx...)
+function lookup{T,V}(array::PersistentArray{Node{T,V}}, version::V, idx...)
     map(
         i -> lookup(i, version),
         sub(array.data, idx...)
     )
 end
 
-function Base.getindex{T,V}(array::PersistentArray{T,V}, idx...)
+function Base.getindex{T,V}(array::PersistentArray{Node{T,V}}, idx...)
     result = map(
         i -> latest(i),
         sub(array.data, idx...)
@@ -95,14 +94,14 @@ function Base.getindex{T,V}(array::PersistentArray{T,V}, idx...)
     end
 end
 
-function Base.setindex!{T,V}(array::PersistentArray{T,V}, x::T, idx...)
+function Base.setindex!{T,V}(array::PersistentArray{Node{T,V}}, x::T, idx...)
     update!(array, x, array.version, idx...)
 end
 
 # Required for subtype of AbstractArray
 Base.size(array::PersistentArray, idx::Int...) = size(array.data, idx...)
-Base.linearindexing(::Type{PersistentArray}) = LinearFast()
-Base.ndims(array::PersistentArray) = ndims(array.data)
+Base.linearindexing{T<:PersistentArray}(::Type{T}) = Base.LinearFast()
+#Base.ndims(array::PersistentArray) = ndims(array.data)
 
 
 export PersistentArray, version, lookup, update!, commit!, increment
