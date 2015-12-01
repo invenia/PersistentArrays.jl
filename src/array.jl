@@ -7,8 +7,12 @@ the corresponding Node operation in relation to the number
 of stored versions.
 """
 type PersistentArray{T,N} <: AbstractArray{T,N}
-    data::AbstractArray{Node,N}
+    data::AbstractArray
     version
+end
+
+function PersistentArray(array::AbstractArray; version=version)
+    PersistentArray{Node,size(array)}(array, version)
 end
 
 """
@@ -17,7 +21,7 @@ builds a persistent array where each Node contains 1 version
 (default_version, default_value).
 """
 function PersistentArray{V,T}(dims::Int...; default_value::T=0.0, default_version::V=1)
-    a = Array{Node{V,T}, length(dims)}(dims...)
+    a = Array(Node{V,T}, dims...)
     map(
         i -> a[i] = Node(default_version, default_value),
         eachindex(a)
@@ -102,4 +106,4 @@ end
 # Required for subtype of AbstractArray
 Base.size(array::PersistentArray, idx::Int...) = size(array.data, idx...)
 Base.linearindexing{T<:PersistentArray}(::Type{T}) = Base.LinearFast()
-#Base.ndims(array::PersistentArray) = ndims(array.data)
+Base.ndims(array::PersistentArray) = ndims(array.data)

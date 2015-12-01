@@ -4,5 +4,5 @@ module PersistentArrays
 include("node.jl")
 include("array.jl")
 
-export PersistentArray, version, lookup, update!, commit!, increment
+export PersistentArray, version, lookup, update!, commit!, increment, Node
 end # module

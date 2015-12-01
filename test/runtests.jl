@@ -48,4 +48,11 @@ ndim_array[1,:] = ones(2)
 @test size(ndim_array) == (3,2)
 @test size(ndim_array, 1) == 3
 
+println(ndim_array)
 
+# Check that sub works
+sub_array = sub(ndim_array, 1:2, :)
+sub_tmp_array = sub(tmp_array, 1:2, :)
+println(sub_array)
+println(sub_tmp_array)
+@test sub_array[1,1] == sub_tmp_array[1,1]
